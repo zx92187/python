@@ -318,7 +318,7 @@ print(classification_report(y_test,pred))
 
 
 
-#Decision Trees and Random Forest
+##############Decision Trees and Random Forest
 import pandas as pd
 import numpy as np
 
@@ -374,6 +374,126 @@ print(classification_report(y_test,rfc_pred))
 #so less variation, this could affect model results
 df['Kyphosis'].value_counts()
 
+
+##########Support Vector Machines (SVM)
+import pandas as pd
+import numpy as np
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+from sklearn.datasets import load_breast_cancer
+
+cancer = load_breast_cancer()
+cancer.keys()
+#get details of the data set
+print(cancer['DESCR'])
+
+#grab features
+df_feat=pd.DataFrame(cancer['data'],columns=cancer['feature_names'])
+df_feat.info()
+
+cancer['target']
+#what does target mean
+cancer['target_names']
+
+from sklearn.model_selection import train_test_split
+
+X=df_feat
+y=cancer['target']
+
+
+X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.30)
+
+
+from sklearn.svm import SVC
+
+model = SVC()
+model.fit(X_train,y_train)
+
+predictions = model.predict(X_test)
+
+from sklearn.metrics import classification_report, confusion_matrix
+
+#report says everything belows to a single group, model failed
+#need to search for the right parameters for the model
+print(confusion_matrix(y_test,predictions))
+print('\n')
+print(classification_report(y_test,predictions))
+
+#grid_search
+from sklearn.model_selection import GridSearchCV
+
+#trying to find the right parameters
+#below, 'C' controls the cost of mis-classification, 
+    #the larger C gives lower bias but higher variance
+#gamma is free parameter in the radio basis function (kernel = 'rbf')
+    #larger gamma means higher bias and low vairance 
+    
+#SVC(C=1.0, cache_size=200, class_weight=None, coef0=0.0,
+#  decision_function_shape='ovr', degree=3, gamma='auto', kernel='rbf',
+#  max_iter=-1, probability=False, random_state=None, shrinking=True,
+#  tol=0.001, verbose=False)
+
+#create the parameters we are going to do grid search on
+param_grid = {'C':[0.1,1,10,100,1000],'gamma':[1,0.1,0.01,0.001,0.0001]}
+
+#need to check meaning of verbose 
+grid=GridSearchCV(SVC(),param_grid,verbose=3)
+grid.fit(X_train,y_train)
+
+#get best parameters and estimators
+grid.best_params_
+grid.best_estimator_
+                  
+grid_predictions = grid.predict(X_test)                  
+              
+print(confusion_matrix(y_test,grid_predictions))
+print('\n')
+print(classification_report(y_test,grid_predictions))
+
+
+
+###########################K Means Clustering for unlabeled the data
+#unsupervised learning - not to predict any particular variable
+#we are looking for patterns
+import pandas as pd
+import numpy as np
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+#creating a fake data set with certain features
+from sklearn.datasets import make_blobs
+data = make_blobs(n_samples=200,n_features=2,centers=4,cluster_std=1.8,
+                  random_state=101)
+
+#200 data points with 2 features (variables)
+data[0].shape
+
+plt.scatter(data[0][:,0],data[0][:,1],c=data[1],cmap='rainbow')
+
+from sklearn.cluster import KMeans
+
+kmeans = KMeans(n_clusters=4)
+kmeans.fit(data[0])
+
+kmeans.cluster_centers_
+kmeans.labels_
+#if you do not know the labels, at stage, you are done.
+
+#since our data is unsupervised we the labels
+#plot with matplotlib
+fig , (ax1,ax2) = plt.subplots(1,2, sharey=True,figsize=(10,6))
+#plot predicted labels
+ax1.set_title('K means')
+ax1.scatter(data[0][:,0],data[0][:,1],c=kmeans.labels_,cmap='rainbow')
+#plot actual labels
+ax2.set_title('Original')
+ax2.scatter(data[0][:,0],data[0][:,1],c=data[1],cmap='rainbow')
+#in the plots, colours do not mean the same in two plots
+#we can change number of clusters in kmeans = KMeans(n_clusters=4)
 
 
 
