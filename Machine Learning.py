@@ -9,9 +9,6 @@ Created on Wed Jul 18 20:03:51 2018
 #from sklearn.family import "Model", "Model" could mean different models
 #for example, LinearRegression
 
-
-
-
 USA_Housing_path = (r"C:\Users\mzhen\Desktop\Programming\Python\Python-Data-Science-and-Machine-Learning-Bootcamp\Python-Data-Science-and-Machine-Learning-Bootcamp\Machine Learning Sections\Linear-Regression\USA_Housing.csv")
 
 df = pd.read_csv(USA_Housing_path)
@@ -495,8 +492,204 @@ ax2.scatter(data[0][:,0],data[0][:,1],c=data[1],cmap='rainbow')
 #in the plots, colours do not mean the same in two plots
 #we can change number of clusters in kmeans = KMeans(n_clusters=4)
 
+####Principle Compoent Analysis 
+#dimension reduction by forming combinations of the features
+import pandas as pd
+import numpy as np
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+from sklearn.datasets import load_breast_cancer
+
+cancer = load_breast_cancer()
+
+type(cancer)
+cancer.keys()
+#get descr of the data
+print(cancer['DESCR'])
+
+df = pd.DataFrame(cancer['data'],columns=cancer['feature_names'])
+df.head()
+
+#check the labeled data
+cancer['target']
+#and check the labels 
+cancer['target_names']
+
+#standardize the data
+from sklearn.preprocessing import StandardScaler
+scaler = StandardScaler()
+scaler.fit(df)
+scaled_data=scaler.transform(df)
+
+#PCA
+from sklearn.decomposition import PCA
+
+pca=PCA(n_components=2)
+pca.fit(scaled_data)
+
+x_pca=pca.transform(scaled_data)
+#the original scaled data have 30 dimensions
+scaled_data.shape
+#the pca fitted data have 2 dimensions because we defined
+#n_components=2 above
+x_pca.shape
+
+plt.figure(figsize=(8,6))
+#c means color, this shows out of the 30 dimensions 
+#we have isolated 2 dimensions that clearly divide the labeled variable
+#in this case, 'target'
+plt.scatter(x_pca[:,0],x_pca[:,1],c=cancer['target'])
+plt.xlabel('First Principal Component')
+plt.ylabel('Second Principal Component')
+
+#try to understand
+pca.components_
+df_comp = pd.DataFrame(pca.components_,columns=cancer['feature_names'])
+df_comp
+
+plt.figure(figsize=(12,6))
+sns.heatmap(df_comp,cmap='plasma')
+
+###Recommender Systems
+import numpy as np
+import pandas as pd
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+sns.set_style('white')
+
+Data_path = (r"C:\Users\mzhen\Desktop\Programming\Python\Python-Data-Science-and-Machine-Learning-Bootcamp\Python-Data-Science-and-Machine-Learning-Bootcamp\Machine Learning Sections\Recommender-Systems\u.data")
+Item_path = (r"C:\Users\mzhen\Desktop\Programming\Python\Python-Data-Science-and-Machine-Learning-Bootcamp\Python-Data-Science-and-Machine-Learning-Bootcamp\Machine Learning Sections\Recommender-Systems\u.item")
+Movie_Id_Path = (r"C:\Users\mzhen\Desktop\Programming\Python\Python-Data-Science-and-Machine-Learning-Bootcamp\Python-Data-Science-and-Machine-Learning-Bootcamp\Machine Learning Sections\Recommender-Systems\Movie_Id_Titles")
+
+columns_names = ['user_id','item_id','rating','timestamp']
+
+df = pd.read_csv(Data_path,sep='\t',names=columns_names)
+df.head()
+
+movie_titles = pd.read_csv(Movie_Id_Path)
+movie_titles.head()
+
+df = pd.merge(df,movie_titles,on='item_id')
+df.head()
+
+#check movies with highest ratings regardless of number of ratings received
+df.groupby('title')['rating'].mean().sort_values(ascending=False).head()
+
+#check movies with most ratings
+df.groupby('title')['rating'].count().sort_values(ascending=False).head()
+
+#creat a ratings dataframe
+#step 1
+ratings = pd.DataFrame(df.groupby('title')['rating'].mean())
+ratings.head()
+
+#step 2 add number of ratings
+ratings['num of ratings']=pd.DataFrame(df.groupby('title')['rating'].count())
+ratings.head()
+
+#step 3 visualize number of ratings
+ratings['num of ratings'].hist(bins=70)
+#dist of rating of movies
+ratings['rating'].hist(bins=70)
+#dist b/w avg rating and number of ratings
+sns.jointplot(x='rating',y='num of ratings',data=ratings,alpha=0.5)
+
+#crating recommender system based on item similarity
+df.head()
+
+#creating matrix
+moviemat=df.pivot_table(index='user_id',columns='title',values='rating')
+moviemat.head()
+
+ratings.sort_values('num of ratings',ascending=False).head(10)
+
+starwars_user_ratings = moviemat['Star Wars (1977)']
+liarliar_user_ratings = moviemat['Liar Liar (1997)']
+
+#compute pair-wise correlation of two data set 
+similar_to_starwars = moviemat.corrwith (starwars_user_ratings)
+similar_to_liarliar = moviemat.corrwith (liarliar_user_ratings)
+
+#getting similar movies - recommender system
+corr_starwars=pd.DataFrame(similar_to_starwars,columns=['Correlation'])
+corr_starwars.dropna(inplace=True)
+corr_starwars.head()
+
+#the strange ones that are perfectly correlated because these movies 
+#have little ratings 
+corr_starwars.sort_values('Correlation',ascending=False).head(10)
+
+#set a threshold on number of ratings so that we can filter out
+#movies with less reviews
+
+#filter out any movies with <100 reviews
+#step 1 add num of ratings to data
+corr_starwars = corr_starwars.join(ratings['num of ratings'])
+corr_starwars.head()
+#filter
+corr_starwars[corr_starwars['num of ratings']>100].sort_values('Correlation',ascending=False).head()
+
+corr_liarliar = pd.DataFrame(similar_to_liarliar,columns=['Correlation'])
+corr_liarliar
+corr_liarliar.dropna(inplace=True)
+
+corr_liarliar=corr_liarliar.join(ratings['num of ratings'])
+corr_liarliar[corr_liarliar['num of ratings']>100].sort_values('Correlation',ascending=False).head()
 
 
+#Natual Language Processing
+###build spam detector
+import nltk
+#downloading data
+#nltk.download_shell()
 
+Data_path = (r"C:\Users\mzhen\Desktop\Programming\Python\Python-Data-Science-and-Machine-Learning-Bootcamp\Python-Data-Science-and-Machine-Learning-Bootcamp\Machine Learning Sections\Natural-Language-Processing\smsspamcollection\SMSSpamCollection")
 
+messages = [line.rstrip() for line in open(Data_path)]
+print(len(messages))
+#check random messages
+messages[50]
 
+for mess_no,message in enumerate(messages[:10]):
+    print(mess_no,message)
+    print('\n')
+    
+messages[0]
+#'ham\tGo until jurong point, crazy.. 
+#Available only in bugis n great world la e buffet... Cine there got amore wat...'
+#"\t" means tab separated
+
+#transform the raw text file into a data file
+import pandas as pd
+
+messages = pd.read_csv(Data_path,sep='\t',names=['label','message'])
+
+messages.head()
+
+#check unique values
+messages.describe()
+
+#check unique values by group
+messages.groupby('label').describe()
+
+#creat a new variable with variable length
+messages['length']=messages['message'].apply(len)
+messages.head()
+
+#visualize length
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+messages['length'].plot.hist(bins=50)
+
+messages['length'].describe()
+
+#grab the longest message in the data and print the entire msg
+messages[messages['length']==910]['message'].iloc[0]
+
+#check histograms of ham and spam message length 
+messages.hist(column='length',by='label',bins=60,figsize=(12,4))
